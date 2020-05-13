@@ -2,7 +2,11 @@
 
 This is an encoder and decoder for the foundationdb [tuple encoding](https://apple.github.io/foundationdb/data-modeling.html#tuples) format.
 
-`npm i --save fdb-tuple` then:
+```
+npm install --save fdb-tuple
+```
+
+then:
 
 ```javascript
 const tuple = require('fdb-tuple')
@@ -22,13 +26,13 @@ The spec for the encoding format itself is [documented here](https://github.com/
 This library has no dependancies and can be embedded in lots of places, but unfortunately for historical reasons its written against nodejs buffers. The [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView) API would be a better fit - because that would allow it to be used in browser contexts too. Please file an issue if you care about this - if nobody makes noise I may never get around to making that change.
 
 
-## Why use tuple encoding when json/msgpack/bson etc already exist?
+## Why use tuple encoding when JSON / msgpack / BSON etc already exist?
 
 FDB tuples are the recommended way to encode keys in foundationdb because tuples carry some important benefits compared to using JSON (or any other encoding method):
 
 - Every tuple has a canonical byte encoding. JSON allows many ways for the same object can be converted to bytes. (For example, an object's keys can be reordered). So you might store a value with a key, then later be unable to fetch or update your value if your JSON encoder arbitrarily changes which bytes it uses to represent your key.
 - The tuple encoding format is a binary format - so keys become smaller than they would with JSON. This can be quite important when you have a lot of small objects in your database.
-- The bytes produced by the tuple encoder can be (sensibly) lexographically compared. For example, the bytes used to store the tuples `[-1]`, `[0]`, `[2]`, `[10]` will sort in that order. (JSON would sort those numbers `0`, `10`, `2` instead). This enables range read methods to work correctly.
+- The bytes produced by the tuple encoder are ordered based on how the encoded items themselves are ordered. For example, the bytes used to store tuples containing `0`, `2`, `10` preserves that order. (JSON gives you `0`, `10`, `2` instead). This enables range read methods to work correctly.
 - The tuple encoder has the property that pack(concat(a, b)) == concat(pack(a), pack(b)). This makes dealing with prefixes much easier, because key prefixes can be naively concatenated. For example in fdb, `db.at(['x']).get(['y'])` and `db.get(['x', 'y'])` are equivalent.
 - Unlike JSON, FDB tuples natively support bigints (up to 255 bytes) and byte arrays
 - The tuple encoder allows special versionstamp placeholders to be embedded, which (on save) are replaced with information about the committed database version. See [node-foundationdb documentation](https://github.com/josephg/node-foundationdb#2-using-versionstamps-with-the-tuple-layer) on how to use this.
