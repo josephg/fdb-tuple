@@ -376,7 +376,7 @@ function packRaw(arr?: TupleItem | TupleItem[]): Buffer | UnboundStamp {
  * `pack(x)` is equivalent to `pack([x])` if x is not itself an array. Packing
  * single items this way is also slightly more efficient.
  */
-export const pack = (arr?: TupleItem | TupleItem[]): Buffer => {
+export function pack(arr?: TupleItem | TupleItem[]): Buffer {
   const pack = packRaw(arr)
   if (!Buffer.isBuffer(pack)) throw new TypeError('Incomplete versionstamp included in vanilla tuple pack')
   return pack
