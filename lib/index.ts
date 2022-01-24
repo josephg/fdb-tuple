@@ -150,7 +150,7 @@ class BufferBuilder {
   used: number = 0
 
   constructor(capacity: number = 64) {
-    this.storage = Buffer.alloc(capacity)
+    // this.storage = Buffer.alloc(capacity)
   }
 
   make() {
@@ -204,6 +204,8 @@ class BufferBuilder {
   //   this.used += 2
   // }
 }
+
+BufferBuilder.prototype.storage = Buffer.allocUnsafe(10000)
 
 const adjustFloat = (data: Buffer, isEncode: boolean) => {
   if((isEncode && (data[0] & 0x80) === 0x80) || (!isEncode && (data[0] & 0x80) === 0x00)) {
