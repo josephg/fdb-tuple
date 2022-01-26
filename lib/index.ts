@@ -145,42 +145,43 @@ export const rawRange = {
 // https://github.com/microsoft/TypeScript/issues/36155
 const isBigInt = (x: TupleItem): x is BigInt => typeof x === 'bigint'
 
-class BufferBuilder {
-  storage: Buffer
-  used: number = 0
+/** This is a globally shared buffer used while writing. */
+let storage = Buffer.allocUnsafe(10 * 1024)
+// Better to test with a small buffer and force the library to resize it.
+// let storage = Buffer.allocUnsafe(10)
 
-  constructor(capacity: number = 64) {
-    // this.storage = Buffer.alloc(capacity)
-  }
+class BufferBuilder {
+  used: number = 0
 
   make() {
     const result = Buffer.alloc(this.used)
-    this.storage.copy(result, 0, 0, this.used)
+    // Ideally it'd be nice to remove this.
+    storage.copy(result, 0, 0, this.used)
     return result
   }
 
   need(numBytes: number) {
-    if (this.storage.length < this.used + numBytes) {
-      let newAmt = this.storage.length
+    if (storage.length < this.used + numBytes) {
+      let newAmt = storage.length
       while (newAmt < this.used + numBytes) newAmt *= 2
       const newStorage = Buffer.alloc(newAmt)
-      this.storage.copy(newStorage)
-      this.storage = newStorage
+      storage.copy(newStorage)
+      storage = newStorage
     }
   }
 
-  appendByte(val: number) { this.need(1); this.storage[this.used++] = val }
+  appendByte(val: number) { this.need(1); storage[this.used++] = val }
 
   appendString(val: string) {
     const len = Buffer.byteLength(val)
     this.need(len)
-    this.storage.write(val, this.used)
+    storage.write(val, this.used)
     this.used += len
   }
 
   appendBuffer(val: Buffer) {
     this.need(val.length)
-    val.copy(this.storage, this.used)
+    val.copy(storage, this.used)
     this.used += val.length
   }
 
@@ -190,7 +191,7 @@ class BufferBuilder {
   writeInto(numBytes: number): Buffer {
     this.need(numBytes)
     this.used += numBytes
-    return this.storage.slice(this.used - numBytes, this.used)
+    return storage.slice(this.used - numBytes, this.used)
   }
 
   // appendZeros(num: number) {
@@ -200,12 +201,10 @@ class BufferBuilder {
 
   // appendU16BE(num: number) {
   //   this.need(2)
-  //   this.storage.writeUInt16BE(num, this.used)
+  //   storage.writeUInt16BE(num, this.used)
   //   this.used += 2
   // }
 }
-
-BufferBuilder.prototype.storage = Buffer.allocUnsafe(10000)
 
 const adjustFloat = (data: Buffer, isEncode: boolean) => {
   if((isEncode && (data[0] & 0x80) === 0x80) || (!isEncode && (data[0] & 0x80) === 0x00)) {
